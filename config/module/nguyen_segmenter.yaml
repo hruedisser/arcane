@@ -1,0 +1,7 @@
+_target_: src.arcane2.modules.segmentation_module.SegmentationModule
+model: ${model}
+num_classes: ${model.num_classes}
+lr: 1e-3
+scheduler: ${scheduler}
+optimizer: ${optimizer}
+loss: "dice"

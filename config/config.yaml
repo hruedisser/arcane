@@ -1,0 +1,48 @@
+project: "arcane2"
+cache_folder: "/cache"
+plots_folder: "/plots"
+force_load: True
+log_wandb: True
+device: "auto"
+num_gpus: 1
+
+data_module:
+  _target_: src.arcane2.data.datamodule.ParsedDataModule
+  batch_size: 128
+  num_workers: 8
+  shuffle: True
+
+  train_dataset:
+    _target_: src.arcane2.data.abstract.boundary_filtered_dataset.BoundaryFilteredDataset
+    dataset: ${base_dataset}
+    boundaries: ${boundaries.train_boundaries}
+
+  val_dataset:
+    _target_: src.arcane2.data.abstract.boundary_filtered_dataset.BoundaryFilteredDataset
+    dataset: ${base_dataset}
+    boundaries: ${boundaries.val_boundaries}
+
+  test_dataset:
+    _target_: src.arcane2.data.abstract.boundary_filtered_dataset.BoundaryFilteredDataset
+    dataset: ${base_dataset}
+    boundaries: ${boundaries.test_boundaries}
+
+  train_sampler: ${samplers.train_sampler}
+  val_sampler: ${samplers.val_sampler}
+  test_sampler: ${samplers.test_sampler}
+
+  train_collate_fn: ${collate_fns.train_collate_fn}
+  val_collate_fn: ${collate_fns.val_collate_fn}
+  test_collate_fn: ${collate_fns.test_collate_fn}
+
+# Add module to command line with +module=CONFIG
+
+training:
+  checkpoint_dir: "/cache"
+  checkpoint_loss: val/loss
+  checkpoint_mode: min
+
+  callbacks: ${callbacks}
+
+  epochs: 100
+  precision: 16

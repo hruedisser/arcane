@@ -1,0 +1,34 @@
+_target_: src.arcane2.data.abstract.sequential_dataset.SequentialDataset
+dataset:
+  _target_: src.arcane2.data.abstract.multi_signal_dataset.MultiSignalDataset
+  single_signal_datasets:
+    - _target_: src.arcane2.data.catalogs.nguyen_dataset.Nguyen_Dataset
+      folder_paths:
+      - "${hydra:runtime.cwd}/data/dataverse_files/ICME_catalog_OMNI.csv"
+      - "${hydra:runtime.cwd}/data/dataverse_files/Sheath_catalog_OMNI.csv"
+      event_types: "ICME"
+      filters: False
+      cap: 0.5
+    - _target_: src.arcane2.data.realtime.realtime_insitu_dataset.RealtimeInsituDataset
+      folder_path: "${hydra:runtime.cwd}/data/noaa_archive_gsm.p"
+      components:
+        - "bx"
+        - "by"
+        - "bz"
+        - "bt"
+        - "vt"
+        - "np"
+        - "tp"
+        - "beta"
+      resample: True
+      resample_freq: "30min"
+      resample_method: "mean"
+      padding: "drop"
+      lin_interpol: 12
+  catalog_idx: 0
+n_samples: 512
+max_time_gap: 30.0
+filters: False
+weights: True
+weight_type: "binary"
+weight_factor: 10.0

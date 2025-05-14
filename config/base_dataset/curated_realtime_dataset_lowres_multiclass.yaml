@@ -1,0 +1,40 @@
+_target_: src.arcane2.data.abstract.sequential_dataset.SequentialDataset
+dataset:
+  _target_: src.arcane2.data.abstract.multi_signal_dataset.MultiSignalDataset
+  single_signal_datasets:
+    - _target_: src.arcane2.data.catalogs.icmecat_dataset.ICMECAT_Dataset
+      folder_paths:
+      - "https://helioforecast.space/static/sync/icmecat/HELIO4CAST_ICMECAT_v23.csv"
+      event_types: "Sheath"
+      startname: "icme_start_time"
+      endname: "mo_start_time"
+    - _target_: src.arcane2.data.catalogs.icmecat_dataset.ICMECAT_Dataset
+      folder_paths:
+      - "https://helioforecast.space/static/sync/icmecat/HELIO4CAST_ICMECAT_v23.csv"
+      event_types: "MO"
+      startname: "mo_start_time"
+      endname: "mo_end_time"
+    - _target_: src.arcane2.data.realtime.realtime_insitu_dataset.RealtimeInsituDataset
+      folder_path: "${hydra:runtime.cwd}/data/noaa_archive_gsm.p"
+      components:
+        - "bx"
+        - "by"
+        - "bz"
+        - "bt"
+        - "vt"
+        - "np"
+        - "tp"
+        - "beta"
+      resample: True
+      resample_freq: "30min"
+      resample_method: "mean"
+      padding: "drop"
+      lin_interpol: 12
+  catalog_idx: 0
+n_samples: 512
+max_time_gap: 30.0
+filters: False
+filter_key: "ICMECAT_catalog-MO"
+weights: True
+weight_type: "binary"
+weight_factor: 10.0

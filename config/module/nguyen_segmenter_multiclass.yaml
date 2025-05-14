@@ -1,0 +1,11 @@
+_target_: src.arcane2.modules.segmentation_module_multiclass.SegmentationModule
+model: ${model}
+num_classes: ${model.num_classes}
+lr: 1e-4
+class_weights:
+  - 1.0
+  - 20.0
+  - 10.0
+scheduler: ${scheduler}
+optimizer: ${optimizer}
+loss: "cross_entropy"

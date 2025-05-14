@@ -1,0 +1,7 @@
+train_sampler:
+  _target_: torch.utils.data.WeightedRandomSampler
+  num_samples: 10000
+val_sampler:
+  _target_: src.arcane2.data.samplers.CustomSubsetSampler
+  every_n_items: 6
+test_sampler: null

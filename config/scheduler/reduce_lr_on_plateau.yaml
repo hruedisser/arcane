@@ -1,0 +1,6 @@
+type: ReduceLROnPlateau
+monitor: ${training.checkpoint_loss}
+params:
+  mode: ${training.checkpoint_mode}
+  factor: 0.1
+  patience: 3

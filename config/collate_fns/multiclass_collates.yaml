@@ -1,0 +1,68 @@
+train_collate_fn:
+  _target_: src.arcane2.data.collates.ListCollate
+  delete_original: true
+  collates:
+    - _target_: src.arcane2.data.collates.ListCollate
+      item_keys: "NOAA.*"
+      delete_original: true
+
+      collates:
+        - _target_: src.arcane2.data.collates.BatchCollate
+        - _target_: src.arcane2.data.collates.ConcatenateCollate
+          new_key: insitu
+
+    - _target_: src.arcane2.data.collates.ListCollate
+      item_keys: "ICMECAT.*"
+      delete_original: true
+
+      collates:
+        - _target_: src.arcane2.data.collates.BatchCollate
+        - _target_: src.arcane2.data.collates.ConcatenateCollate
+          new_key: catalog
+    - _target_: src.arcane2.data.collates.BatchCollate
+
+val_collate_fn:
+  _target_: src.arcane2.data.collates.ListCollate
+  delete_original: true
+  collates:
+    - _target_: src.arcane2.data.collates.ListCollate
+      item_keys: "NOAA.*"
+      delete_original: true
+
+      collates:
+        - _target_: src.arcane2.data.collates.BatchCollate
+        - _target_: src.arcane2.data.collates.ConcatenateCollate
+          new_key: insitu
+
+    - _target_: src.arcane2.data.collates.ListCollate
+      item_keys: "ICMECAT.*"
+      delete_original: true
+
+      collates:
+        - _target_: src.arcane2.data.collates.BatchCollate
+        - _target_: src.arcane2.data.collates.ConcatenateCollate
+          new_key: catalog
+    - _target_: src.arcane2.data.collates.BatchCollate
+
+test_collate_fn:
+  _target_: src.arcane2.data.collates.ListCollate
+  delete_original: true
+  collates:
+    - _target_: src.arcane2.data.collates.ListCollate
+      item_keys: "NOAA.*"
+      delete_original: true
+
+      collates:
+        - _target_: src.arcane2.data.collates.BatchCollate
+        - _target_: src.arcane2.data.collates.ConcatenateCollate
+          new_key: insitu
+
+    - _target_: src.arcane2.data.collates.ListCollate
+      item_keys: "ICMECAT.*"
+      delete_original: true
+
+      collates:
+        - _target_: src.arcane2.data.collates.BatchCollate
+        - _target_: src.arcane2.data.collates.ConcatenateCollate
+          new_key: catalog
+    - _target_: src.arcane2.data.collates.BatchCollate
