@@ -26,6 +26,7 @@ git clone https://github.com/hruedisser/arcane
 Download the [data](https://doi.org/10.6084/m9.figshare.28309295.v3)
 
 Place the contents of **data.zip** in **arcane/data/**
+
 Place the contents of **cache.zip** in **arcane/cache/**
 
 ### Install conda environment
