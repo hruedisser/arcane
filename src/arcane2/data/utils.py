@@ -6,7 +6,10 @@ import torch
 from hydra.utils import instantiate
 from loguru import logger
 
-from ..modules.test_module_tminus import TestModuleTMinusOptimized
+from ..modules.test_module_tminus import (
+    TestModuleTMinusOptimized,
+    TestModuleTMinusOptimizedMultiClass,
+)
 from .abstract.boundary_filtered_dataset import BoundaryFilteredDataset
 from .data_utils.event import find, overlap_with_list
 from .datamodule import ParsedDataModule
@@ -472,6 +475,64 @@ def create_or_load_testmodule_tminus_optimized(
     return test_module, load_cache
 
 
+def create_or_load_testmodule_tminus_optimized_multiclass(
+    cache_path: str | Path,
+    no_ask: bool = False,
+    classifier_module=None,
+    data_module=None,
+    modelname=None,
+    device="cpu",
+    diff_name="",
+    max_timestep=100,
+):
+    cache_path = Path(cache_path)
+    logger.info(f"Current working directory: {Path.cwd()}")
+    logger.info(f"Checking cache at {cache_path}")
+    cache_path.mkdir(parents=True, exist_ok=True)
+
+    if classifier_module == None or data_module == None:
+        raise ValueError("classifier_module and test_dataloader must be provided")
+
+    load_cache = False
+    if TestModuleTMinusOptimizedMultiClass.check_load_cache(
+        cache_path, diff_name=diff_name
+    ):
+        if not no_ask:
+            load_cache = input(
+                f"Found testmodule cache at {cache_path}. Load from cache? ([yes]/no): "
+            ) in ["", "yes"]
+        else:
+            load_cache = True
+
+    if load_cache:
+        print(f"Loading data module from {cache_path}")
+        test_module = TestModuleTMinusOptimizedMultiClass.load(
+            cache_path,
+            classifier_module,
+            data_module.test_dataloader(),
+            device=device,
+            diff_name=diff_name,
+        )
+    else:
+        test_module = TestModuleTMinusOptimizedMultiClass(
+            classifier_module,
+            data_module.test_dataloader(),
+            device=device,
+        )
+        df = data_module.test_dataset.dataset.dataset.df
+        test_module.run_inference_all_timesteps(
+            df=df,
+            modelname=modelname,
+            max_timestep=max_timestep,
+        )
+
+        print(f"Saving test_module in {cache_path}")
+        test_module.save(cache_path, diff_name=diff_name)
+
+    test_module.device = device
+    return test_module, load_cache
+
+
 def merge_columns_by_mean(
     df, prefix="predicted_value_train_arcane_rtsw_new_", tminus_range=range(1, 101)
 ):
@@ -515,11 +576,33 @@ def merge_columns_by_mean_kp(df, prefix="keyparam_pred_0_train_cumsum_"):
     return df
 
 
-def shift_columns(df):
+def shift_columns(df, freq="min", multiplier=30):
+    """
+    Shift columns based on the suffix _tminusX
+    """
     for col in df.columns:
         if "_tminus" in col:
             # Extract the time shift value (X)
             shift_value = int(col.split("_tminus")[-1])
             # Shift the column by the shift_value
-            df[col] = df[col].shift(-shift_value)  # shift forward by negative value
+            df[col] = df[col].shift(
+                -int(shift_value * multiplier), freq=freq
+            )  # shift forward by negative value
     return df
+
+
+def create_group_boundaries(years_group):
+    if not years_group:
+        return []
+    boundaries = []
+    start_year = years_group[0]
+    end_year = years_group[0]
+    for year in years_group[1:]:
+        if year - end_year == 1:
+            end_year = year
+        else:
+            boundaries.append([f"{start_year}0101T000000", f"{end_year+1}0101T000000"])
+            start_year = year
+            end_year = year
+    boundaries.append([f"{start_year}0101T000000", f"{end_year+1}0101T000000"])
+    return boundaries

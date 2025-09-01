@@ -463,3 +463,10 @@ def GSM_to_HEEQ(bx, by, bz, time):
     heeq_bx, heeq_by, heeq_bz = HEE_to_HEEQ(hee_bx, hee_by, hee_bz, time)
 
     return heeq_bx, heeq_by, heeq_bz
+
+
+def freq_to_minutes(freq):
+    if freq.endswith("min"):
+        return int(freq[:-3])
+    else:
+        raise ValueError(f"Frequency {freq} is not in minutes format (e.g., '30min').")

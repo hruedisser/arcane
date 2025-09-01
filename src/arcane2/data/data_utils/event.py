@@ -172,9 +172,27 @@ class DONKIEvent(Event):
         initial_speed: float = None,
         longitude: float = None,
         latitude: float = None,
+        half_width: float = None,
+        begin: datetime.datetime = None,
+        middle: datetime.datetime = None,
+        end: datetime.datetime = None,
     ):
-        begin = arrival_time - arrival_time_err if arrival_time else None
-        end = arrival_time + arrival_time_err if arrival_time else None
+
+        if begin is None and end is None:
+
+            begin = (
+                arrival_time - arrival_time_err
+                if arrival_time
+                else launch_time + datetime.timedelta(hours=36)
+            )
+            end = (
+                arrival_time + arrival_time_err
+                if arrival_time
+                else launch_time + datetime.timedelta(hours=48)
+            )
+        else:
+            arrival_time = middle
+            arrival_time_err = end - middle
 
         super().__init__(
             begin=begin,
@@ -192,6 +210,7 @@ class DONKIEvent(Event):
         self.arrival_time_err = arrival_time_err
         self.longitude = longitude
         self.latitude = latitude
+        self.half_width = half_width
 
 
 class EventCatalog:
@@ -642,3 +661,37 @@ def compare_catalogs(true_cat, pred_cat, thresh=0.01, choice="first"):
         FP = [x for x in pred_cat if max(overlap_with_list(x, true_cat)) == 0]
 
     return TP, FP, FN, detected, delays, durations
+
+
+def round_up_to_next_x_minutes(dt, x):
+    """
+    Round a datetime object up to the next x minutes.
+    """
+    if not isinstance(dt, datetime.datetime):
+        raise TypeError("Input must be a datetime object")
+
+    # Remove seconds and microseconds
+    dt = dt.replace(second=0, microsecond=0)
+
+    remainder = dt.minute % x
+    if remainder == 0:
+        return dt
+    minutes_to_add = x - remainder
+    return dt + datetime.timedelta(minutes=minutes_to_add)
+
+
+def round_down_to_previous_x_minutes(dt, x):
+    """
+    Round a datetime object down to the previous x minutes.
+    """
+    if not isinstance(dt, datetime.datetime):
+        raise TypeError("Input must be a datetime object")
+
+    # Remove seconds and microseconds
+    dt = dt.replace(second=0, microsecond=0)
+
+    remainder = dt.minute % x
+    if remainder == 0:
+        return dt
+    minutes_to_subtract = remainder
+    return dt - datetime.timedelta(minutes=minutes_to_subtract)

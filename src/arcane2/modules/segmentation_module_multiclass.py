@@ -110,7 +110,18 @@ class SegmentationModule(LightningModule):
 
         y = y.transpose(1, 2)
 
-        loss_cross_entropy = self.loss_ce(y_hat.float(), y.float())
+        try:
+            loss_cross_entropy = self.loss_ce(y_hat.float(), y.float())
+        except:
+            if y_hat.dim() == 2 and y.dim() == 3:
+                # Reshape y_hat to match y's dimensions
+                y_hat = y_hat.unsqueeze(0)
+            elif y_hat.dim() == 3 and y.dim() == 2:
+                # Reshape y to match y_hat's dimensions
+                y = y.unsqueeze(0)
+
+            loss_cross_entropy = self.loss_ce(y_hat.float(), y.float())
+
         accuracy = self.accuracy(y_hat.float(), y.float())
 
         loss = {f"loss_ce": loss_cross_entropy, "accuracy": accuracy}

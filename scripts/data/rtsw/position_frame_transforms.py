@@ -163,7 +163,9 @@ Geocentric position conversions
 def GSE_to_GSM(df):
     B_GSM = []
     for i in range(df.shape[0]):
-        T1, T2, T3 = get_geocentric_transformation_matrices(df["time"].iloc[0])
+        T1, T2, T3 = get_geocentric_transformation_matrices(
+            df["time"].iloc[i]
+        )  # get transformation matrices for the current time
         B_GSE_i = np.matrix([[df["x"].iloc[i]], [df["y"].iloc[i]], [df["z"].iloc[i]]])
         B_GSM_i = np.dot(T3, B_GSE_i)
         B_GSM_i_list = B_GSM_i.tolist()
@@ -179,7 +181,9 @@ def GSE_to_GSM(df):
 def GSM_to_GSE(df):
     B_GSE = []
     for i in range(df.shape[0]):
-        T1, T2, T3 = get_geocentric_transformation_matrices(df["time"].iloc[0])
+        T1, T2, T3 = get_geocentric_transformation_matrices(
+            df["time"].iloc[i]
+        )  # get transformation matrices for the current time
         T3_inv = np.linalg.inv(T3)
         B_GSM_i = np.matrix([[df["x"].iloc[i]], [df["y"].iloc[i]], [df["z"].iloc[i]]])
         B_GSE_i = np.dot(T3_inv, B_GSM_i)
@@ -201,7 +205,9 @@ Heliocentric position conversions
 def HEE_to_HAE(df):
     B_HAE = []
     for i in range(df.shape[0]):
-        S1, S2 = get_heliocentric_transformation_matrices(df["time"].iloc[0])
+        S1, S2 = get_heliocentric_transformation_matrices(
+            df["time"].iloc[i]
+        )  # get transformation matrices for the current time
         S1_inv = np.linalg.inv(S1)
         B_HEE_i = np.matrix([[df["x"].iloc[i]], [df["y"].iloc[i]], [df["z"].iloc[i]]])
         B_HEA_i = np.dot(S1_inv, B_HEE_i)
@@ -218,7 +224,9 @@ def HEE_to_HAE(df):
 def HAE_to_HEE(df):
     B_HEE = []
     for i in range(df.shape[0]):
-        S1, S2 = get_heliocentric_transformation_matrices(df["time"].iloc[0])
+        S1, S2 = get_heliocentric_transformation_matrices(
+            df["time"].iloc[i]
+        )  # get transformation matrices for the current time
         B_HAE_i = np.matrix([[df["x"].iloc[i]], [df["y"].iloc[i]], [df["z"].iloc[i]]])
         B_HEE_i = np.dot(S1, B_HAE_i)
         B_HEE_i_list = B_HEE_i.tolist()
@@ -234,7 +242,9 @@ def HAE_to_HEE(df):
 def HAE_to_HEEQ(df):
     B_HEEQ = []
     for i in range(df.shape[0]):
-        S1, S2 = get_heliocentric_transformation_matrices(df["time"].iloc[0])
+        S1, S2 = get_heliocentric_transformation_matrices(
+            df["time"].iloc[i]
+        )  # get transformation matrices for the current time
         B_HAE_i = np.matrix([[df["x"].iloc[i]], [df["y"].iloc[i]], [df["z"].iloc[i]]])
         B_HEEQ_i = np.dot(S2, B_HAE_i)
         B_HEEQ_i_list = B_HEEQ_i.tolist()
@@ -250,7 +260,9 @@ def HAE_to_HEEQ(df):
 def HEEQ_to_HAE(df):
     B_HAE = []
     for i in range(df.shape[0]):
-        S1, S2 = get_heliocentric_transformation_matrices(df["time"].iloc[0])
+        S1, S2 = get_heliocentric_transformation_matrices(
+            df["time"].iloc[i]
+        )  # get transformation matrices for the current time
         S2_inv = np.linalg.inv(S2)
         B_HEEQ_i = np.matrix([[df["x"].iloc[i]], [df["y"].iloc[i]], [df["z"].iloc[i]]])
         B_HEA_i = np.dot(S2_inv, B_HEEQ_i)
@@ -315,7 +327,9 @@ def GSE_to_HEE(df):
     B_HEE = []
     z_rot_180 = np.matrix([[-1, 0, 0], [0, -1, 0], [0, 0, 1]])
     for i in range(df.shape[0]):
-        R_sun = get_rsun_position_vector(df["time"].iloc[0])
+        R_sun = get_rsun_position_vector(
+            df["time"].iloc[i]
+        )  # get current position vector of the Sun instead of using a fixed one
         try:
             B_GSE_i = np.matrix(
                 [[df["x"].iloc[i]], [df["y"].iloc[i]], [df["z"].iloc[i]]]

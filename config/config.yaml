@@ -9,7 +9,7 @@ num_gpus: 1
 data_module:
   _target_: src.arcane2.data.datamodule.ParsedDataModule
   batch_size: 128
-  num_workers: 8
+  num_workers: 5
   shuffle: True
 
   train_dataset:

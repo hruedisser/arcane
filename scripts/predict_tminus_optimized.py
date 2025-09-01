@@ -107,13 +107,13 @@ def main(cfg):
         modelname,
         device=device,
         diff_name=diff_name_numbered,
-        max_timestep=100,
+        max_timestep=150,
     )
 
     if load_cache:
         test_module.run_inference_all_timesteps(
             modelname=modelname,
-            max_timestep=100,
+            max_timestep=150,
         )
         test_module.save(Path(cache_path), diff_name=diff_name_numbered)
 

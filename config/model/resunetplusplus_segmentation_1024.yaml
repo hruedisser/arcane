@@ -1,0 +1,13 @@
+_target_: src.arcane2.models.resunetplusplus.ResUNet
+input_channels: 8
+input_length: ${base_dataset.n_samples}
+n_filters:
+  - 16
+  - 32
+  - 64
+  - 128
+  - 256
+  - 512
+num_classes: 2
+output_length: ${base_dataset.n_samples}
+activation: "softmax"

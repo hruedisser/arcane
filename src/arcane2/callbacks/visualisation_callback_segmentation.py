@@ -1,11 +1,14 @@
 import math
 
+import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
 import torch
 from pytorch_lightning import Callback
 from torchvision.utils import make_grid
+
+matplotlib.use("Agg")
 
 
 class VisualisationCallbackSegmentation(Callback):

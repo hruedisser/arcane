@@ -436,6 +436,9 @@ if create_big == True:
     else:
         print("No DSCOVR data 2.0 found")
 
+    df_dscovr_pos = df_dscovr_pos.set_index("time")
+    df_ace_pos = df_ace_pos.set_index("time")
+
     # Use vectorized lookup for positions
     def get_positions(time, source_mag):
         if source_mag in [1.0, 2.0]:

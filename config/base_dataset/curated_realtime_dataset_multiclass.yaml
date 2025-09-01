@@ -15,7 +15,7 @@ dataset:
       startname: "mo_start_time"
       endname: "mo_end_time"
     - _target_: src.arcane2.data.realtime.realtime_insitu_dataset.RealtimeInsituDataset
-      folder_path: "${hydra:runtime.cwd}/data/noaa_archive_gsm_updated.p"
+      folder_path: "${hydra:runtime.cwd}/data/noaa_archive_gsm.p"
       components:
         - "bx"
         - "by"
@@ -26,13 +26,13 @@ dataset:
         - "tp"
         - "beta"
       resample: True
-      resample_freq: "30min"
+      resample_freq: "10min"
       resample_method: "mean"
       padding: "drop"
-      lin_interpol: 12
+      lin_interpol: 36
   catalog_idx: 0
-n_samples: 512
-max_time_gap: 30.0
+n_samples: 1024
+max_time_gap: 10.0
 filters: False
 filter_key: "ICMECAT_catalog-MO"
 weights: True

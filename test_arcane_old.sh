@@ -23,29 +23,30 @@ fi
 conda activate "$ENV_NAME"
 
 
-#Loop through all the years between 1998 and 2024
-for year in {1998..2024}; do
+#Loop through all the years between 1998 and 2023
+for year in {1998..2023}; do
     # Loop through all folds (0, 1, 2)
     for fold in {0..2}; do
       echo "###################################"
       echo "###################################"
-      echo "Training for year $year, fold $fold"
+      echo "Testing for year $year, fold $fold"
       echo "###################################"
       echo "###################################"
 
       # Execute the Python script for each combination of year and fold
-      HYDRA_FULL_ERROR=1 python3 -m scripts.train \
-        --config-name config \
-        +base_dataset=min10_1024 \
+      HYDRA_FULL_ERROR=1 python3 -m scripts.predict_tminus_optimized \
+        --config-name config_test \
+        +base_dataset=curated_realtime_dataset_lowres \
         +boundaries=boundaries_rtsw_${year}_${fold} \
-        +collate_fns=standard_collates_helcats \
-        +samplers=weighted \
-        +callbacks=visualisation_classification_segmentation_inference \
+        +collate_fns=standard_collates \
+        +samplers=imbalanced \
+        +callbacks=no_callbacks \
         +scheduler=reduce_lr_on_plateau \
-        +run_name=arcane_min10_1024 \
-        +model=resunetplusplus_segmentation_1024 \
+        +run_name=train_arcane_rtsw_new_bounds_new_drops \
+        +model=resunetplusplus_segmentation_lowres \
         +module=nguyen_segmenter \
-        +optimizer=adam
+        +optimizer=adam\
+        ++base_dataset.stride=1
 
     done
 done

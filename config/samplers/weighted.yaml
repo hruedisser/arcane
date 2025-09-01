@@ -3,5 +3,5 @@ train_sampler:
   num_samples: 10000
 val_sampler:
   _target_: src.arcane2.data.samplers.CustomSubsetSampler
-  every_n_items: 6
+  every_n_items: 18
 test_sampler: null

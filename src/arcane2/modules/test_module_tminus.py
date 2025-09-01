@@ -596,3 +596,161 @@ class TestModuleTMinusOptimized(TestModuleTMinus):
             self.all_results = all_results_df
 
         logger.info("Inference completed for all historical timesteps.")
+
+
+class TestModuleTMinusOptimizedMultiClass(TestModuleTMinus):
+    # run super init
+    def __init__(
+        self,
+        classifier_module: ClassifierModule,
+        test_dataloader,
+        device: str = "cpu",
+    ):
+        super().__init__(classifier_module, test_dataloader, device)
+
+    def run_inference_all_timesteps(
+        self,
+        max_timestep,
+        df=None,
+        modelname=None,
+        image_key="insitu",
+        label_key="catalog",
+    ):
+        """
+        Run inference once and collect results for all historical timesteps.
+
+        Args:
+            max_timestep: Maximum number of historical timesteps to save.
+            df: Existing DataFrame to merge results into.
+            modelname: Name of the model for labeling the results.
+            image_key: Key to access insitu data from the batch.
+            label_key: Key to access catalog labels from the batch.
+        Returns:
+            Updates `self.all_results` with the results.
+        """
+
+        logger.info(
+            f"Running inference on the test set for all timesteps up to {max_timestep}..."
+        )
+
+        all_results = {t: [] for t in range(1, max_timestep + 1)}
+
+        # Set the model to evaluation mode
+        self.classifier_module.eval()
+
+        # Disable gradient calculation for faster inference
+        with torch.no_grad():
+            for batch in tqdm(self.test_dataloader):
+                insitu_data = batch[image_key]
+                segmentation = batch[label_key].float().squeeze()
+                timestamps = batch["timestamp"]
+                idxs = batch["idx"]
+
+                # Run the model inference
+
+                seg_hat = self.classifier_module(
+                    insitu_data.to(self.classifier_module.device)
+                )
+
+                true_segmentation_c1 = segmentation.to(self.classifier_module.device)[
+                    :, -1, 0
+                ]
+                true_segmentation_c2 = segmentation.to(self.classifier_module.device)[
+                    :, -1, 1
+                ]
+
+                for t in range(1, max_timestep + 1):
+                    segmentation_hat_sheath = seg_hat.to(self.classifier_module.device)[
+                        :, 1, -t
+                    ]
+                    segmentation_hat_mo = seg_hat.to(self.classifier_module.device)[
+                        :, 2, -t
+                    ]
+
+                    batch_results = [
+                        (
+                            int(idx.item()),
+                            ts.item(),
+                            seg_true_c1.item(),
+                            seg_true_c2.item(),
+                            seg_pred_sheath.item(),
+                            seg_pred_mo.item(),
+                        )
+                        for idx, ts, seg_true_c1, seg_true_c2, seg_pred_sheath, seg_pred_mo in zip(
+                            idxs,
+                            timestamps,
+                            true_segmentation_c1,
+                            true_segmentation_c2,
+                            segmentation_hat_sheath,
+                            segmentation_hat_mo,
+                        )
+                    ]
+                    all_results[t].extend(batch_results)
+
+        combined_results = []
+        for t, results in all_results.items():
+            cols = [
+                "idx",
+                "timestamp",
+                "true_value_c1",
+                "true_value_c2",
+                (
+                    f"predicted_value_sheath_{modelname}_tminus{t}"
+                    if modelname
+                    else f"predicted_value_sheath_tminus{t}"
+                ),
+                (
+                    f"predicted_value_mo_{modelname}_tminus{t}"
+                    if modelname
+                    else f"predicted_value_mo_tminus{t}"
+                ),
+            ]
+            results_df = pd.DataFrame(results, columns=cols)
+            results_df["timestamp"] = pd.to_datetime(results_df["timestamp"], unit="s")
+            results_df.set_index("timestamp", inplace=True)
+            results_df.index = results_df.index.round("10min")
+            combined_results.append(results_df)
+
+        all_results_df = pd.concat(combined_results)
+
+        # Merge with existing DataFrame if provided
+
+        if df is not None:
+            all_results_df = pd.concat([all_results_df, df], axis=0).sort_index()
+            all_results_df = all_results_df.groupby(all_results_df.index).first()
+        if self.all_results is not None:
+            self.all_results = pd.concat(
+                [self.all_results, all_results_df], axis=0
+            ).sort_index()
+            self.all_results = self.all_results.groupby(self.all_results.index).first()
+        else:
+            self.all_results = all_results_df
+
+        logger.info("Inference completed for all historical timesteps.")
+
+    @staticmethod
+    def load(
+        root_path,
+        classifier_module,
+        test_dataloader,
+        device="cpu",
+        diff_name="",
+    ):
+        test_module = TestModuleTMinusOptimizedMultiClass(
+            classifier_module, test_dataloader
+        )
+
+        test_module.device = device
+
+        root_path = Path(root_path)
+
+        if diff_name == "":
+            results_path = root_path / "all_results.pkl"
+        else:
+            results_path = root_path / f"all_results_{diff_name}.pkl"
+
+        if results_path.exists():
+            with open(results_path, "rb") as path:
+                test_module.all_results = pickle.load(path)
+
+        return test_module
