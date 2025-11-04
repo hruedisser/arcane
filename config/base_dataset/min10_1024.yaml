@@ -4,7 +4,7 @@ dataset:
   single_signal_datasets:
     - _target_: src.arcane2.data.catalogs.icmecat_dataset.ICMECAT_Dataset
       folder_paths:
-      - "https://helioforecast.space/static/sync/icmecat/HELIO4CAST_ICMECAT_v23.csv"
+      - "${hydra:runtime.cwd}/data/icmecat/HELIO4CAST_ICMECAT_v23.csv"
       event_types: "ICME"
       startname: "icme_start_time"
       endname: "mo_end_time"
