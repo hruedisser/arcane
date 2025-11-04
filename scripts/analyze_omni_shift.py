@@ -797,6 +797,50 @@ elif analysis == 2:
     plt.savefig(plot_dir / "positions_dscovr_ace_wind.pdf", dpi=300)
     plt.close()
 
+    # Plot for ML Helio
+
+    fig_ml, ax_ml = plt.subplots(figsize=(6, 6))
+
+    # plot positions with inverted x-axis
+    ax_ml.plot(
+        -df_dscovr_pos_GSE_since_dscovr["x"],
+        df_dscovr_pos_GSE_since_dscovr["y"],
+        label="DSCOVR",
+        color=geo_cornflowerblue,
+    )
+    ax_ml.plot(
+        -df_ace_pos_GSE_since_dscovr["x"],
+        df_ace_pos_GSE_since_dscovr["y"],
+        label="ACE",
+        color=geo_lime,
+    )
+    ax_ml.plot(
+        -df_wind_pos_GSE_since_dscovr["x"],
+        df_wind_pos_GSE_since_dscovr["y"],
+        label="Wind",
+        color=geo_magenta,
+    )
+    ax_ml.plot(
+        -df_l1_pos_GSE_since_dscovr["x"],
+        df_l1_pos_GSE_since_dscovr["y"],
+        label="L1",
+        color="black",
+    )
+
+    ax_ml.set_xlabel("X (GSE) [km]")
+    ax_ml.set_ylabel("Y (GSE) [km]")
+
+    # Force scientific notation with exponent 6
+    formatter_ml = ScalarFormatter(useMathText=True)
+    formatter_ml.set_scientific(True)
+    formatter_ml.set_powerlimits((6, 6))  # force 1e6 notation
+    ax_ml.yaxis.set_major_formatter(formatter_ml)
+    ax_ml.xaxis.set_major_formatter(formatter_ml)
+
+    ax_ml.legend()
+    plt.savefig(plot_dir / "positions_dscovr_ace_wind_mlhelio.pdf", dpi=300)
+    plt.close()
+
     print(
         "Calculating the differences and analyzing precise timeshift for each event..."
     )
