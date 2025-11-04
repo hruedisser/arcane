@@ -21,6 +21,7 @@ class InsituDataset(DatasetBase):
         resample_method: str = "mean",
         padding: str = "drop",
         lin_interpol: int = 0,
+        ffill_max: int = 0,
         scaling: str = "Standard",
         scaler_path: str | Path = None,
     ):
@@ -41,6 +42,7 @@ class InsituDataset(DatasetBase):
         self.resample_method = resample_method
         self.padding = padding
         self.lin_interpol = lin_interpol
+        self.ffill_max = ffill_max
         self.scaling = scaling
         self.scaler_path = Path(scaler_path) if scaler_path else None
 
@@ -149,6 +151,10 @@ class InsituDataset(DatasetBase):
         if self.lin_interpol > 0:
             logger.info(f"Interpolating missing values with limit {self.lin_interpol}")
             dataframe = dataframe.interpolate(method="time", limit=self.lin_interpol)
+
+        if self.ffill_max > 0:
+            logger.info(f"Forward filling missing values with limit {self.ffill_max}")
+            dataframe = dataframe.ffill(limit=self.ffill_max)
 
         # Handle padding if required
         if self.padding:
