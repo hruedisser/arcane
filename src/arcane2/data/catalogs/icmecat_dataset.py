@@ -8,6 +8,9 @@ from tqdm import tqdm
 from ...data.data_utils.event import Event, EventCatalog
 from ..base_sensors.catalog_dataset import CatalogDataset
 
+file_dir = Path(__file__).resolve()
+data_dir = file_dir.parents[4] / "data"
+
 
 class ICMECAT_EventCatalog(EventCatalog):
     def __init__(
@@ -33,7 +36,15 @@ class ICMECAT_EventCatalog(EventCatalog):
         Read catalog from folder_path
         """
         evtlist = []
-        ic = pd.read_csv(self.folder_paths[0])
+
+        # load from local file if url not reachable
+        try:
+            ic = pd.read_csv(self.folder_paths[0])
+        except:
+            print(f"Could not reach {self.folder_paths[0]}, loading local file...")
+            file_name = self.folder_paths[0].split("/")[-1]
+            ic = pd.read_csv(data_dir / file_name)
+
         isc = ic.loc[:, "sc_insitu"]
         iid = ic.loc[:, "icmecat_id"]
         begin = pd.to_datetime(ic.loc[:, self.startname])
