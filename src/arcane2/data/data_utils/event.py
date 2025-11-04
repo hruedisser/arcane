@@ -26,7 +26,6 @@ class Event:
 
         self.begin = begin.replace(tzinfo=None)
         self.end = end.replace(tzinfo=None)
-        self.duration = self.end - self.begin
 
         if self.duration > datetime.timedelta(days=7):
             logger.warning(
@@ -39,6 +38,10 @@ class Event:
         self.proba = proba
         self.proba_max = proba_max
 
+    @property
+    def duration(self):
+        return self.end - self.begin
+
     def __str__(self) -> str:
         return f"{self.event_id}: {self.begin} ---> {self.end}"
 
@@ -49,7 +52,7 @@ class Event:
         """
         return True if other overlaps self during 65/100 of the time
         """
-        return self.overlap(other) > 0.65 * self.duration
+        return self.overlap(other) > 0.65 * (self.end - self.begin)
 
     def overlap(self, other):
         """return the time overlap between two events as a timedelta"""
@@ -82,7 +85,7 @@ class Event:
         return self.percentage
 
     def get_percentile_data(self, df, freq="10min"):
-        duration_quarters = self.duration / 4
+        duration_quarters = (self.end - self.begin) / 4
         percentages = []
 
         for i in range(4):
@@ -311,6 +314,7 @@ class EventCatalog:
         logger.info(
             f"Creating {self.catalog_name} catalog from dataframe at key: {self.key}"
         )
+
         # fill with 0
         labels = (
             self.dataframe[self.key].resample(self.resample_freq).asfreq().fillna(0)
@@ -377,7 +381,7 @@ class EventCatalog:
         current_event = evtlist_full[0]
         for next_event in evtlist_full[1:]:
             # If the gap between the current event's end and the next event's begin is smaller than creep_delta, merge them
-            if next_event.begin - current_event.end <= creep_delta:
+            if (next_event.begin - current_event.end) <= creep_delta:
                 # Extend the current event's end to the next event's end
                 current_event.end = next_event.end
             else:
@@ -392,7 +396,7 @@ class EventCatalog:
         merged_evtlist_filtered = [
             event
             for event in merged_evtlist
-            if event.duration > datetime.timedelta(minutes=self.creep_delta)
+            if (event.end - event.begin) > datetime.timedelta(minutes=self.creep_delta)
         ]
 
         return merged_evtlist_filtered
@@ -408,8 +412,8 @@ def is_in_list(ref_event, event_list, thresh, percent=True):
         return max(overlap_with_list(ref_event, event_list, percent=True)) > thresh
 
     else:
-        return (
-            max(overlap_with_list(ref_event, event_list)) > thresh * ref_event.duration
+        return max(overlap_with_list(ref_event, event_list)) > thresh * (
+            ref_event.end - ref_event.begin
         )
 
 
@@ -470,7 +474,7 @@ def similarity(event1, event2):
     if event1 is None:
         return 0
     inter = event1.overlap(event2)
-    return inter / (event1.duration + event2.duration - inter)
+    return inter / ((event1.end - event1.begin) + (event2.end - event2.begin) - inter)
 
 
 def overlap_with_list(ref_event, event_list, percent=True):
@@ -481,7 +485,10 @@ def overlap_with_list(ref_event, event_list, percent=True):
     in the list
     """
     if percent:
-        return [ref_event.overlap(elt) / ref_event.duration for elt in event_list]
+        return [
+            ref_event.overlap(elt) / (ref_event.end - ref_event.begin)
+            for elt in event_list
+        ]
     else:
         return [ref_event.overlap(elt) for elt in event_list]
 
@@ -611,7 +618,7 @@ def cat_per_threshold(df, key, duration=30, threshs=0.001):
         cat.event_cat = [
             event
             for event in cat.event_cat
-            if event.duration > datetime.timedelta(minutes=duration)
+            if (event.end - event.begin) > datetime.timedelta(minutes=duration)
         ]
         removed_count = original_count - len(cat.event_cat)
 
