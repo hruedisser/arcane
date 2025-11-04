@@ -543,6 +543,7 @@ def merge_columns_by_mean(
     columns_to_remove = []
     for t in tminus_range:
         cols_to_merge = [f"{prefix}{i}_tminus{t}" for i in range(3)]
+
         if all(col in df.columns for col in cols_to_merge):
             merged_data[f"{prefix}tminus{t}"] = df[cols_to_merge].mean(axis=1)
             columns_to_remove.extend(cols_to_merge)
@@ -606,3 +607,10 @@ def create_group_boundaries(years_group):
             end_year = year
     boundaries.append([f"{start_year}0101T000000", f"{end_year+1}0101T000000"])
     return boundaries
+
+
+def freq_to_minutes(freq):
+    if freq.endswith("min"):
+        return int(freq[:-3])
+    else:
+        raise ValueError(f"Frequency {freq} is not in minutes format (e.g., '30min').")
