@@ -2,6 +2,7 @@ import datetime
 import pickle
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 import torch
@@ -633,14 +634,113 @@ class TestModuleTMinusOptimizedMultiClass(TestModuleTMinus):
             f"Running inference on the test set for all timesteps up to {max_timestep}..."
         )
 
+        # Set the model to evaluation mode
+        self.classifier_module.eval()
+
+        # Precompute column names
+        sheath_cols = [
+            (
+                f"predicted_value_sheath_{modelname}_tminus{t}"
+                if modelname
+                else f"predicted_value_sheath_tminus{t}"
+            )
+            for t in range(1, max_timestep + 1)
+        ]
+        mo_cols = [
+            (
+                f"predicted_value_mo_{modelname}_tminus{t}"
+                if modelname
+                else f"predicted_value_mo_tminus{t}"
+            )
+            for t in range(1, max_timestep + 1)
+        ]
+
+        batch_frames = []
+
+        device = self.classifier_module.device
+
+        # Disable gradient calculation for faster inference
+        with torch.no_grad():
+            for batch in tqdm(self.test_dataloader):
+                insitu_data = batch[image_key]
+                segmentation = batch[label_key].float().squeeze()
+                timestamps = batch["timestamp"]
+                idxs = batch["idx"]
+
+                # Run the model inference
+                seg_hat = self.classifier_module(insitu_data)
+
+                # true labels at last timestep, move to cpu once
+                true_c1 = segmentation[:, -1, 0].detach().cpu().numpy()
+                true_c2 = segmentation[:, -1, 1].detach().cpu().numpy()
+
+                sheath_all = seg_hat[:, 1, -max_timestep:].detach().cpu()
+                mo_all = seg_hat[:, 2, -max_timestep:].detach().cpu()
+
+                sheath_all = torch.flip(sheath_all, dims=[1]).numpy()
+                mo_all = torch.flip(mo_all, dims=[1]).numpy()
+
+                idx_np = np.asarray([int(i) for i in idxs])
+                ts_np = np.asarray([int(ts) for ts in timestamps])
+
+                data = {
+                    "idx": idx_np,
+                    "timestamp": pd.to_datetime(ts_np, unit="s"),
+                    "true_value_c1": true_c1,
+                    "true_value_c2": true_c2,
+                }
+
+                for j, col in enumerate(sheath_cols):
+                    data[col] = sheath_all[:, j]
+                for j, col in enumerate(mo_cols):
+                    data[col] = mo_all[:, j]
+
+                df_batch = pd.DataFrame(data)
+                df_batch.set_index("timestamp", inplace=True)
+                df_batch.index = df_batch.index.round("10min")
+
+                batch_frames.append(df_batch)
+
+                # free tensors ASAP
+                del seg_hat, insitu_data, segmentation
+                if device != "cpu":
+                    torch.cuda.empty_cache()
+
+        all_results_df = pd.concat(batch_frames).sort_index()
+
+        # Merge with existing DataFrame(s)
+        if df is not None:
+            all_results_df = (
+                pd.concat([all_results_df, df], axis=0)
+                .sort_index()
+                .groupby(level=0)
+                .first()
+            )
+
+        if self.all_results is not None:
+            self.all_results = (
+                pd.concat([self.all_results, all_results_df], axis=0)
+                .sort_index()
+                .groupby(level=0)
+                .first()
+            )
+        else:
+            self.all_results = all_results_df
+
+        logger.info("Inference completed for all historical timesteps.")
+
+        """ This is the old version that used WAY too much memory
+
         all_results = {t: [] for t in range(1, max_timestep + 1)}
 
         # Set the model to evaluation mode
         self.classifier_module.eval()
 
+
         # Disable gradient calculation for faster inference
         with torch.no_grad():
-            for batch in tqdm(self.test_dataloader):
+            for batch in tqdm((self.test_dataloader)):
+
                 insitu_data = batch[image_key]
                 segmentation = batch[label_key].float().squeeze()
                 timestamps = batch["timestamp"]
@@ -727,6 +827,8 @@ class TestModuleTMinusOptimizedMultiClass(TestModuleTMinus):
             self.all_results = all_results_df
 
         logger.info("Inference completed for all historical timesteps.")
+
+    """
 
     @staticmethod
     def load(
